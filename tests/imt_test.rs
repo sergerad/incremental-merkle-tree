@@ -1,9 +1,10 @@
 use imt::Builder;
+use imt::Height;
 
 #[test]
 fn something() {
-    let _imt = Builder::default()
-        .height(32)
-        .expect("expected valid height")
-        .build();
+    let _imt: imt::Imt = Builder::default()
+        .height(Height::try_from(32).expect("todo"))
+        .build()
+        .expect("build");
 }
