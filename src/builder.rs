@@ -1,6 +1,6 @@
-use crate::imt::Imt;
-use crate::imt::Node;
 use crate::prelude::*;
+use crate::tree::Node;
+use crate::tree::Tree;
 use sha256::digest;
 
 use crate::height::Height;
@@ -16,24 +16,21 @@ impl Builder {
         self
     }
 
-    pub fn build(self) -> Result<Imt> {
-        let empty_digests: Vec<Node> = vec![Node::default(); self.height.into()];
-        let zero_digests: Vec<Node> = empty_digests
-            .iter()
-            .skip(1)
-            .scan(Node::default(), |acc: &mut Node, _| {
-                let digest = digest([&acc[..], &acc[..]].concat());
-                println!("{digest}");
-                Some(Node::try_from(digest).expect("todo123"))
-            })
-            .collect();
-        Ok(Imt {
+    pub fn build(self) -> Result<Tree> {
+        let mut zero_digests = vec![Node::default(); 1];
+        for level in 1..self.height.into() {
+            let digest =
+                digest([&zero_digests[level - 1][..], &zero_digests[level - 1][..]].concat());
+            zero_digests.push(Node::try_from(digest).expect("todo123"));
+        }
+        Ok(Tree {
             left_digests_per_level: vec![Node::default(); self.height.into()],
             root_digest: zero_digests
                 .last()
                 .ok_or(Error::Generic("no last digest"))?
                 .clone(),
             zero_digests_per_level: zero_digests,
+            height: self.height,
             max_leaves: 2_u64.pow(self.height.into()),
             next_leaf_index: 0,
         })

@@ -1,9 +1,10 @@
 pub mod builder;
 pub mod error;
 pub mod height;
-pub mod imt;
 mod prelude;
+pub mod tree;
 
 pub use builder::Builder;
 pub use height::Height;
-pub use imt::Imt;
+pub use tree::Node;
+pub use tree::Tree;

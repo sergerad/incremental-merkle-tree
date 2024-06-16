@@ -1,10 +1,9 @@
-use imt::Builder;
-use imt::Height;
-
 #[test]
 fn something() {
-    let _imt: imt::Imt = Builder::default()
-        .height(Height::try_from(32).expect("todo"))
+    let mut imt: imt::Tree = imt::Builder::default()
+        .height(imt::Height::try_from(32).expect("todo"))
         .build()
         .expect("build");
+
+    imt.add_leaf(imt::Node::default()).expect("todo");
 }
