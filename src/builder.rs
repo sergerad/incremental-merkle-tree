@@ -1,7 +1,7 @@
+use crate::node::Node;
+use crate::node::Sha256Node;
 use crate::prelude::*;
-use crate::tree::Node;
 use crate::tree::Tree;
-use sha256::digest;
 
 use crate::height::Height;
 
@@ -16,17 +16,13 @@ impl Builder {
         self
     }
 
-    pub fn build(self) -> Result<Tree> {
+    pub fn build<N: Node>(self) -> Result<Tree<N>> {
         // Create the list of digests generated from zeroed leaves
         // for each level in the tree
-        let mut zero_digests = vec![Node::default(); 1];
+        let mut zero_digests = vec![N::default(); 1];
         for level in 1..self.height.into() {
-            let digest =
-                digest([&zero_digests[level - 1][..], &zero_digests[level - 1][..]].concat());
-            zero_digests.push(
-                Node::try_from(digest.as_str())
-                    .expect("Failed to create tree node from digest string"),
-            );
+            let digest = zero_digests[level - 1].digest(&zero_digests[level - 1]);
+            zero_digests.push(digest);
         }
 
         // Initialize the tree from the last digest in the zero_digests list
@@ -35,7 +31,7 @@ impl Builder {
                 .last()
                 .ok_or(Error::Generic("No last digest"))?
                 .clone(),
-            left_digests_per_level: vec![Node::default(); self.height.into()],
+            left_digests_per_level: vec![N::default(); self.height.into()],
             zero_digests_per_level: zero_digests,
             height: self.height,
             max_leaves: 2_u64.pow(self.height.into()),
