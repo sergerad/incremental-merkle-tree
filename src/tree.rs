@@ -2,6 +2,7 @@ use crate::height::Height;
 use crate::prelude::*;
 use core::ops::Index;
 use sha256::digest;
+use std::fmt::Display;
 use std::slice::SliceIndex;
 
 #[derive(Clone)]
@@ -9,43 +10,33 @@ pub struct Node {
     inner: [u8; Self::SIZE],
 }
 
-impl TryFrom<String> for Node {
+impl Display for Node {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", hex::encode(self.inner))
+    }
+}
+
+impl TryFrom<&str> for Node {
     type Error = Error;
 
-    fn try_from(s: String) -> Result<Self> {
+    fn try_from(s: &str) -> Result<Self> {
         match s.len() {
             Self::DSIZE => {
-                // todo
-                let bytes = hex::decode(s.as_str()).map_err(|_| Error::InvalidDigest(s.len()))?;
+                let bytes = hex::decode(s).map_err(|_| Error::InvalidDigest(s.len()))?;
                 let mut inner = [0; Self::SIZE];
                 inner.copy_from_slice(&bytes);
                 Ok(Self { inner })
             }
             Self::SIZE => {
-                let bytes = s.into_bytes();
+                let bytes = s.to_owned().into_bytes();
                 let mut inner = [0; Self::SIZE];
                 inner.copy_from_slice(&bytes);
                 Ok(Self { inner })
             }
             _ => Err(Error::InvalidDigest(s.len())),
         }
-        //let bytes = s.into_bytes();
-        //if bytes.len() != Self::SIZE {
-        //    return Err(Error::InvalidDigest(bytes.len()));
-        //}
-        //Ok(Self {
-        //    inner: bytes.try_into().expect("todo"),
-        //})
     }
 }
-//impl From<String> for Node {
-//    fn from(s: String) -> Self {
-//        let bytes = s.into_bytes();
-//        let mut inner = [0; Self::SIZE];
-//        inner.copy_from_slice(&bytes);
-//        Self { inner }
-//    }
-//}
 
 impl Default for Node {
     fn default() -> Self {
@@ -85,25 +76,51 @@ impl Tree {
         &self.root_digest
     }
 
-    pub fn add_leaf(&mut self, leaf: Node) -> Result<()> {
+    /// Add a leaf to the tree.
+    /// The tree's root digest and list of left-sided digests are updated.
+    pub fn add_leaf(&mut self, leaf: &str) -> Result<()> {
+        // Handle overflow
         if self.next_leaf_index >= self.max_leaves {
             return Err(Error::TreeOverflow(self.max_leaves));
         }
-        let mut left_right_index = self.next_leaf_index;
-        let mut latest_digest: Node = digest(&leaf[..]).try_into()?;
 
+        // Continue from the last leaf index (L/R)
+        let mut left_right_index = self.next_leaf_index;
+        // Hash the leaf input
+        let mut latest_digest: Node = digest(leaf).as_str().try_into()?;
+
+        // Iterate over the levels of the tree
         for level in 0..self.height.into() {
+            // Get the pair of tree nodes to hash together
             let (left, right) = if left_right_index % 2 == 0 {
-                self.left_digests_per_level[level] = latest_digest.clone(); // todo: no clone?
-                (&latest_digest, &self.zero_digests_per_level[level])
+                // Store the latest digest as the left node for the current level
+                self.left_digests_per_level[level] = latest_digest.clone();
+                (
+                    // Left node is the latest digest we generated.
+                    &latest_digest,
+                    // Right node is the zero digest for this level.
+                    &self.zero_digests_per_level[level],
+                )
             } else {
-                (&self.left_digests_per_level[level], &latest_digest)
+                (
+                    // Left node is either a zero digest or the latest digest from the previous level.
+                    &self.left_digests_per_level[level],
+                    // Right node is the latest digest we generated.
+                    &latest_digest,
+                )
             };
-            latest_digest = digest([&left[..], &right[..]].concat()).try_into()?;
+            // Hash the tree nodes
+            latest_digest = digest([&left[..], &right[..]].concat())
+                .as_str()
+                .try_into()?;
+            // Iterate up a level (towards the root node)
             left_right_index /= 2;
         }
 
+        // Store the new root digest
         self.root_digest = latest_digest;
+        // The next leaf will be on the opposite side of the current leaf (L/R)
+        self.next_leaf_index += 1;
 
         Ok(())
     }
