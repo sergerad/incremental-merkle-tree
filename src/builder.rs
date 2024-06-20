@@ -1,5 +1,5 @@
-use crate::node::Node;
-use crate::node::Sha256Node;
+use digest::{Digest, Output};
+
 use crate::prelude::*;
 use crate::tree::Tree;
 
@@ -16,26 +16,31 @@ impl Builder {
         self
     }
 
-    pub fn build<N: Node>(self) -> Result<Tree<N>> {
+    pub fn build<D: Digest>(self) -> Result<Tree<D>> {
         // Create the list of digests generated from zeroed leaves
         // for each level in the tree
-        let mut zero_digests = vec![N::default(); 1];
+        let mut default_nodes = vec![Output::<D>::default()];
         for level in 1..self.height.into() {
-            let digest = zero_digests[level - 1].digest(&zero_digests[level - 1]);
-            zero_digests.push(digest);
+            let previous_node = &default_nodes[level - 1];
+            let node = D::new()
+                .chain_update(previous_node)
+                .chain_update(previous_node)
+                .finalize();
+            default_nodes.push(node);
         }
 
         // Initialize the tree from the last digest in the zero_digests list
         Ok(Tree {
-            root_digest: zero_digests
+            root_node: default_nodes
                 .last()
                 .ok_or(Error::Generic("No last digest"))?
                 .clone(),
-            left_digests_per_level: vec![N::default(); self.height.into()],
-            zero_digests_per_level: zero_digests,
+            left_nodes: vec![Output::<D>::default(); self.height.into()],
+            default_nodes,
             height: self.height,
             max_leaves: 2_u64.pow(self.height.into()),
             next_leaf_index: 0,
+            _digest: std::marker::PhantomData,
         })
     }
 }

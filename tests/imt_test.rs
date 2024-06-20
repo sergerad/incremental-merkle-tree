@@ -1,9 +1,9 @@
 #[test]
 fn default_tree_has_correct_root() {
-    let imt: imt::Tree<imt::Sha256Node> = imt::Builder::default().build().expect("Failed to build");
+    let imt: imt::Tree<sha2::Sha256> = imt::Builder::default().build().expect("Failed to build");
 
     assert_eq!(
-        imt.root_digest().to_string(),
+        format!("{:x}", imt.root()),
         "985e929f70af28d0bdd1a90a808f977f597c7c778c489e98d3bd8910d31ac0f7"
     );
 }
@@ -28,13 +28,12 @@ fn add_leaves_tree_has_correct_roots() {
             "910a56f8a8da7dc2ce46055b53efb08e8df5bcdb3862b7a0f3d8aa0209019f87",
         ),
     ];
-    let mut imt: imt::Tree<imt::Sha256Node> = imt::Builder::default()
+    let mut imt: imt::Tree<sha2::Sha256> = imt::Builder::default()
         .height(imt::Height::try_from(4).unwrap())
         .build()
         .expect("Failed to build");
     for test in tests {
-        imt.add_leaf(test.0.to_owned().into())
-            .expect("Failed to add leaf");
-        assert_eq!(imt.root_digest().to_string(), test.1);
+        imt.add_leaf(test.0).expect("Failed to add leaf");
+        assert_eq!(format!("{:x}", imt.root()), test.1);
     }
 }
