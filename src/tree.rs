@@ -44,7 +44,7 @@ impl<D: Digest> Tree<D> {
                 )
             } else {
                 (
-                    // Left node is either a zero digest or the latest digest from the previous level.
+                    // Left node was stored previously
                     &self.left_nodes[level],
                     // Right node is the latest digest we generated.
                     &latest_node,
