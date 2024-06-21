@@ -4,6 +4,24 @@ This repository contains a Rust implementation of an Incremental Merkle Tree (IM
 
 Incremental Merkle Trees are particularly useful in blockchain smart contracts like the [Ethereum 2.0 Deposit Contract](https://github.com/runtimeverification/deposit-contract-verification/blob/master/deposit-contract-verification.pdf).
 
+## Usage
+
+```rust
+// Import the IMT types
+use imt::*;
+// Import a hashing algorithm of your choosing
+use sha2::Sha256;
+
+// Instantiate an IMT
+let mut imt: Tree<Sha256> = Builder::default().build().unwrap();
+
+// Add a leaf
+imt.add_leaf("some data").expect();
+
+// Read the root digest
+println!("{:x}", imt.root())
+```
+
 ## The Algorithm
 
 IMTs are perfect (balanced) binary trees. They allow us to recalcluate tree roots in polynomial time when new leaves are added. This is achieved by utilizing two, constant-sized slices of digests:
@@ -76,22 +94,4 @@ flowchart TD
 4(AB) --- 1(B)
 5(CD) --- 2(C)
 5(CD) --- 3(D)
-```
-
-## Usage
-
-```rust
-// Import the IMT types
-use imt::*;
-// Import a hashing algorithm of your choosing
-use sha2::Sha256;
-
-// Instantiate an IMT
-let mut imt: Tree<Sha256> = Builder::default().build().unwrap();
-
-// Add a leaf
-imt.add_leaf("some data").expect();
-
-// Read the root digest
-println!("{:x}", imt.root())
 ```
