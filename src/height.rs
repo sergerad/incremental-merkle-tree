@@ -1,5 +1,7 @@
 use crate::prelude::*;
 
+/// Height of the incremental Merkle tree.
+/// Used by the [`crate::builder::Builder`] to create the [`crate::tree::Tree`].
 #[derive(Clone, Copy)]
 pub struct Height(usize);
 

@@ -3,6 +3,10 @@ use digest::{Digest, Output};
 use crate::height::Height;
 use crate::prelude::*;
 
+/// Incremental Merkle tree type.
+/// Has a fixed height and maintains a pair of digests for each non-root level of the tree.
+/// Root digest is updated as leaves are added.
+/// Use the [`crate::builder::Builder`] to create a new tree.
 pub struct Tree<D: Digest> {
     pub(crate) left_nodes: Vec<Output<D>>,
     pub(crate) default_nodes: Vec<Output<D>>,
@@ -14,6 +18,7 @@ pub struct Tree<D: Digest> {
 }
 
 impl<D: Digest> Tree<D> {
+    /// Get the root digest of the tree.
     pub fn root(&self) -> Output<D> {
         self.root_node.clone()
     }

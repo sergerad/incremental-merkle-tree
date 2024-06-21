@@ -5,17 +5,20 @@ use crate::tree::Tree;
 
 use crate::height::Height;
 
+/// Builder for the [`Tree`] type.
 #[derive(Default)]
 pub struct Builder {
     height: Height,
 }
 
 impl Builder {
+    /// Set the height of the tree.
     pub fn height(mut self, height: Height) -> Self {
         self.height = height;
         self
     }
 
+    /// Build the tree with a specific hasher.
     pub fn build<D: Digest>(self) -> Result<Tree<D>> {
         // Create the list of digests generated from zeroed leaves
         // for each level in the tree
