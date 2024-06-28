@@ -16,7 +16,7 @@ use sha2::Sha256;
 let mut imt: Tree<Sha256> = Builder::default().build().unwrap();
 
 // Add a leaf
-imt.add_leaf("some data").expect();
+imt.add_leaf("some data").unwrap();
 
 // Read the root digest
 println!("{:x}", imt.root())
